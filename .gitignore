@@ -7,6 +7,6 @@ out
 *.log
 .DS_Store
 .vercel
+deploy-log.txt
 
-.vercel
 .env*
