@@ -1,0 +1,266 @@
+generator client {
+  provider        = "prisma-client-js"
+  engineType      = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum CustomerType {
+  RETAIL
+  BUSINESS
+}
+
+enum InvoiceType {
+  GST
+  NON_GST
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  COD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  phone        String?
+  role         Role      @default(CUSTOMER)
+  resetToken   String?
+  resetExpires DateTime?
+  customer     Customer?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Customer {
+  id        String       @id @default(cuid())
+  userId    String?      @unique
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  company   String?
+  type      CustomerType @default(RETAIL)
+  gstin     String?
+  phone     String
+  email     String?
+  address   String       @default("")
+  city      String       @default("Chennai")
+  state     String       @default("Tamil Nadu")
+  pincode   String       @default("")
+  notes     String?
+  invoices  Invoice[]
+  orders    Order[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Vendor {
+  id        String     @id @default(cuid())
+  name      String
+  contact   String?
+  phone     String     @default("")
+  email     String?
+  gstin     String?
+  address   String     @default("")
+  city      String     @default("")
+  state     String     @default("Tamil Nadu")
+  pincode   String     @default("")
+  notes     String?
+  purchases Purchase[]
+  products  Product[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  image     String?
+  sortOrder Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  sku           String?
+  hsn           String?
+  description   String          @default("")
+  categoryId    String?
+  category      Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  vendorId      String?
+  vendor        Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  unit          String          @default("pc")
+  packSize      String?
+  images        String[]        @default([])
+  // Pricing engine
+  dbLanding     Float           @default(0) // price paid to dealer per unit, GST-inclusive
+  gstRate       Float           @default(5) // % GST applicable on this product
+  marginPercent Float?          // per-product override of global margin %
+  priceOverride Float?          // manual sell price (incl GST) overrides computed
+  sellPrice     Float           @default(0) // computed/stored sell price per unit, GST-inclusive
+  mrp           Float?
+  // Inventory
+  stock         Int             @default(0)
+  lowStockAt    Int             @default(5)
+  isActive      Boolean         @default(true)
+  isFeatured    Boolean         @default(false)
+  purchaseItems PurchaseItem[]
+  invoiceItems  InvoiceItem[]
+  orderItems    OrderItem[]
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Purchase {
+  id         String         @id @default(cuid())
+  purchaseNo String         @unique
+  vendorId   String
+  vendor     Vendor         @relation(fields: [vendorId], references: [id])
+  billNo     String?
+  billDate   DateTime       @default(now())
+  items      PurchaseItem[]
+  subtotal   Float          @default(0)
+  gstTotal   Float          @default(0)
+  total      Float          @default(0)
+  notes      String?
+  createdAt  DateTime       @default(now())
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  qty        Int
+  rate       Float // per unit, GST-inclusive (DB landing)
+  gstRate    Float    @default(5)
+  amount     Float
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNo     String        @unique
+  type          InvoiceType   @default(GST)
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  date          DateTime      @default(now())
+  items         InvoiceItem[]
+  subtotal      Float         @default(0) // taxable value (GST) or plain total (NON_GST)
+  cgst          Float         @default(0)
+  sgst          Float         @default(0)
+  igst          Float         @default(0)
+  roundOff      Float         @default(0)
+  total         Float         @default(0)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod PaymentMethod @default(BANK_TRANSFER)
+  notes         String?
+  orderId       String?       @unique
+  order         Order?        @relation(fields: [orderId], references: [id])
+  createdAt     DateTime      @default(now())
+}
+
+model InvoiceItem {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name      String
+  hsn       String?
+  unit      String   @default("pc")
+  qty       Int
+  unitPrice Float // per unit, GST-inclusive
+  gstRate   Float    @default(0)
+  taxable   Float
+  tax       Float
+  amount    Float
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNo           String        @unique
+  customerId        String?
+  customer          Customer?     @relation(fields: [customerId], references: [id])
+  status            OrderStatus   @default(PENDING)
+  paymentMethod     PaymentMethod @default(COD)
+  paymentStatus     PaymentStatus @default(PENDING)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  items             OrderItem[]
+  subtotal          Float         @default(0)
+  deliveryCharge    Float         @default(0)
+  total             Float         @default(0)
+  shipName          String
+  shipPhone         String
+  shipEmail         String?
+  shipAddress       String
+  shipCity          String
+  shipState         String        @default("Tamil Nadu")
+  shipPincode       String
+  gstin             String?
+  notes             String?
+  invoice           Invoice?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  qty       Int
+  unitPrice Float
+  gstRate   Float   @default(0)
+  amount    Float
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qty       Int // positive = in, negative = out
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
