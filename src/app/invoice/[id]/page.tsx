@@ -18,7 +18,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   ]);
   if (!inv) notFound();
   if (session.role !== "ADMIN" && inv.customer.userId !== session.id) notFound();
-  const upiQr = inv.paymentStatus === "PAID" ? null : await upiQrSvg({ pa: s.bank_upi, pn: s.bank_holder || s.company_name, am: inv.total, tn: inv.invoiceNo }, 118);
+  const upiQr = await upiQrSvg({ pa: s.bank_upi, pn: s.bank_holder || s.company_name, am: inv.total, tn: inv.invoiceNo }, 118);
   return (
     <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
       <PrintBar backHref={session.role === "ADMIN" ? "/admin/billing" : "/account/invoices"} />

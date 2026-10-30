@@ -116,7 +116,7 @@ export function InvoiceDocument({ inv, s, upiQr }: { inv: InvoiceData; s: Record
         {upiQr ? (
           <div className="flex shrink-0 flex-col items-center">
             <div className="h-[118px] w-[118px]" dangerouslySetInnerHTML={{ __html: upiQr }} />
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wide">Scan &amp; Pay ₹{inrPlain(inv.total)}</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wide">{inv.paymentStatus === "PAID" ? "Scan & Pay (UPI)" : `Scan & Pay ₹${inrPlain(inv.total)}`}</p>
           </div>
         ) : null}
         <div className="flex-1 text-[12px] leading-snug">

@@ -11,7 +11,7 @@ export default async function OrderSuccess({ params }: { params: Promise<{ order
   const [order, s] = await Promise.all([prisma.order.findUnique({ where: { orderNo }, include: { items: true } }), getSettings()]);
   if (!order) notFound();
   const wa = (s.company_whatsapp || s.company_phone || "").replace(/\D/g, "").slice(-10);
-  const upiQr = order.paymentStatus !== "PAID" && order.paymentMethod !== "RAZORPAY" ? await upiQrSvg({ pa: s.bank_upi, pn: s.bank_holder || s.company_name, am: order.total, tn: order.orderNo }, 160) : null;
+  const upiQr = order.paymentStatus !== "PAID" ? await upiQrSvg({ pa: s.bank_upi, pn: s.bank_holder || s.company_name, am: order.total, tn: order.orderNo }, 160) : null;
   return (
     <div className="container-x max-w-2xl py-10">
       <div className="card p-6 text-center sm:p-10">
