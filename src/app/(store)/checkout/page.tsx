@@ -13,7 +13,7 @@ export default async function CheckoutPage() {
         deliveryCharge={parseFloat(s.delivery_charge) || 0}
         freeAbove={parseFloat(s.free_delivery_above) || 0}
         razorpayKey={process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || ""}
-        bank={{ name: s.bank_name, branch: s.bank_branch, account: s.bank_account, ifsc: s.bank_ifsc, holder: s.bank_holder }}
+        bank={{ name: s.bank_name, branch: s.bank_branch, account: s.bank_account, ifsc: s.bank_ifsc, holder: s.bank_holder, upi: s.bank_upi }}
         companyName={s.company_name}
         prefill={{
           name: customer?.name || session?.name || "",

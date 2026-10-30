@@ -4,12 +4,14 @@ import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { inr } from "@/lib/pricing";
+import { upiQrSvg } from "@/lib/upi";
 
 export default async function OrderSuccess({ params }: { params: Promise<{ orderNo: string }> }) {
   const { orderNo } = await params;
   const [order, s] = await Promise.all([prisma.order.findUnique({ where: { orderNo }, include: { items: true } }), getSettings()]);
   if (!order) notFound();
   const wa = (s.company_whatsapp || s.company_phone || "").replace(/\D/g, "").slice(-10);
+  const upiQr = order.paymentStatus !== "PAID" && order.paymentMethod !== "RAZORPAY" ? await upiQrSvg({ pa: s.bank_upi, pn: s.bank_holder || s.company_name, am: order.total, tn: order.orderNo }, 160) : null;
   return (
     <div className="container-x max-w-2xl py-10">
       <div className="card p-6 text-center sm:p-10">
@@ -26,6 +28,14 @@ export default async function OrderSuccess({ params }: { params: Promise<{ order
             Payment: {order.paymentMethod === "RAZORPAY" ? "Online" : order.paymentMethod === "COD" ? "Cash/UPI on delivery" : "Bank transfer"} • {order.paymentStatus}
           </p>
         </div>
+        {upiQr && (
+          <div className="mt-4 rounded-xl bg-white p-4 text-center ring-1 ring-brand-200">
+            <p className="font-bold">Scan & Pay {inr(order.total)} via UPI</p>
+            <div className="mx-auto mt-2 h-40 w-40" dangerouslySetInnerHTML={{ __html: upiQr }} />
+            {s.bank_upi && <p className="mt-1 text-xs text-gray-600">UPI ID: <b>{s.bank_upi}</b></p>}
+            <p className="text-xs text-gray-500">GPay · PhonePe · Paytm · BHIM — mention {order.orderNo}</p>
+          </div>
+        )}
         {order.paymentMethod === "BANK_TRANSFER" && (
           <div className="mt-4 rounded-xl bg-brand-50 p-4 text-left text-sm">
             <p className="font-bold">Transfer to:</p>

@@ -23,7 +23,7 @@ export async function notifyNewOrder(orderId: string) {
           `Thank you, ${order.shipName}!`,
           `<p>Your order <b>${order.orderNo}</b> has been received. We will confirm it shortly.</p>${rows}
           <p style="font-size:13px"><b>Payment:</b> ${pm}<br/><b>Deliver to:</b> ${addr}</p>
-          ${order.paymentMethod === "BANK_TRANSFER" ? `<p style="font-size:13px;background:#f0faf4;padding:10px;border-radius:8px"><b>Bank details</b><br/>${s.bank_holder}<br/>${s.bank_name}, ${s.bank_branch}<br/>${s.bank_account ? `A/c: ${s.bank_account}<br/>` : ""}IFSC: ${s.bank_ifsc}</p>` : ""}
+          ${order.paymentMethod !== "RAZORPAY" ? `<p style="font-size:13px;background:#f0faf4;padding:10px;border-radius:8px"><b>Pay by UPI / Bank</b><br/>${s.bank_upi ? `UPI ID: <b>${s.bank_upi}</b><br/>` : ""}${s.bank_holder}<br/>${s.bank_name}, ${s.bank_branch}<br/>${s.bank_account ? `A/c: ${s.bank_account}<br/>` : ""}IFSC: ${s.bank_ifsc}</p>` : ""}
           <p style="font-size:13px">Track your order: <a href="${site}/account/orders">${site}/account/orders</a></p>`,
         ),
       );

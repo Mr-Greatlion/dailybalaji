@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/Toaster";
 import { computeDelivery } from "./CartView";
 
 type Prefill = { name: string; phone: string; email: string; address: string; city: string; state: string; pincode: string; gstin: string; company: string; isBusiness: boolean };
-type Bank = { name: string; branch: string; account: string; ifsc: string; holder: string };
+type Bank = { name: string; branch: string; account: string; ifsc: string; holder: string; upi: string };
 
 declare global {
   interface Window { Razorpay?: any }
@@ -136,11 +136,18 @@ export function CheckoutForm({ deliveryCharge, freeAbove, razorpayKey, bank, com
                 <div><p className="text-sm font-semibold">Bank transfer (NEFT / IMPS)</p><p className="text-xs text-gray-500">For business accounts — we dispatch after payment</p></div>
               </label>
               {method === "BANK_TRANSFER" && (
-                <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-700">
+                <div className="flex gap-3 rounded-xl bg-gray-50 p-3 text-xs text-gray-700">
+                  {bank.upi && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`/api/upi-qr?am=${total.toFixed(2)}`} alt="UPI QR" className="h-24 w-24 shrink-0 rounded bg-white" />
+                  )}
+                  <div>
+                  {bank.upi && <p>UPI ID: <b>{bank.upi}</b></p>}
                   <p className="font-semibold">{bank.holder}</p>
                   <p>{bank.name}, {bank.branch}</p>
                   {bank.account && <p>A/c No: <b>{bank.account}</b></p>}
                   <p>IFSC: <b>{bank.ifsc}</b></p>
+                  </div>
                 </div>
               )}
             </div>

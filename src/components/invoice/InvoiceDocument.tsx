@@ -19,7 +19,7 @@ export type InvoiceData = {
   order?: { orderNo: string } | null;
 };
 
-export function InvoiceDocument({ inv, s }: { inv: InvoiceData; s: Record<string, string> }) {
+export function InvoiceDocument({ inv, s, upiQr }: { inv: InvoiceData; s: Record<string, string>; upiQr?: string | null }) {
   const isGst = inv.type === "GST";
   const intra = inv.igst === 0;
   return (
@@ -98,15 +98,6 @@ export function InvoiceDocument({ inv, s }: { inv: InvoiceData; s: Record<string
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase text-gray-500">Amount in words</p>
           <p className="font-semibold">{amountInWords(inv.total)}</p>
-          {isGst && (
-            <div className="mt-3">
-              <p className="text-[11px] font-bold uppercase text-gray-500">Bank details</p>
-              <p>{s.bank_holder}</p>
-              <p>{s.bank_name}, {s.bank_branch}</p>
-              {s.bank_account && <p>A/c No: {s.bank_account}</p>}
-              <p>IFSC: {s.bank_ifsc}</p>
-            </div>
-          )}
           {inv.notes && <p className="mt-3 text-xs text-gray-600">Note: {inv.notes}</p>}
         </div>
         <table className="w-64 shrink-0">
@@ -120,7 +111,26 @@ export function InvoiceDocument({ inv, s }: { inv: InvoiceData; s: Record<string
         </table>
       </div>
 
-      <div className="mt-6 flex items-end justify-between border-t border-gray-300 pt-3 text-xs">
+      {/* Payment: UPI QR + bank details on every bill */}
+      <div className="mt-4 flex items-stretch gap-4 rounded-lg border border-gray-300 p-3">
+        {upiQr ? (
+          <div className="flex shrink-0 flex-col items-center">
+            <div className="h-[118px] w-[118px]" dangerouslySetInnerHTML={{ __html: upiQr }} />
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wide">Scan &amp; Pay ₹{inrPlain(inv.total)}</p>
+          </div>
+        ) : null}
+        <div className="flex-1 text-[12px] leading-snug">
+          <p className="text-[11px] font-bold uppercase text-gray-500">Payment details</p>
+          {s.bank_upi && <p>UPI ID: <b>{s.bank_upi}</b> <span className="text-gray-500">(GPay / PhonePe / Paytm / BHIM)</span></p>}
+          <p className="mt-1 font-semibold">{s.bank_holder}</p>
+          <p>{s.bank_name}, {s.bank_branch}</p>
+          {s.bank_account && <p>A/c No: <b>{s.bank_account}</b></p>}
+          <p>IFSC: <b>{s.bank_ifsc}</b></p>
+          <p className="mt-1 text-[11px] text-gray-500">Please mention invoice no. {inv.invoiceNo} in the payment remark.</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-end justify-between border-t border-gray-300 pt-3 text-xs">
         <p className="max-w-md text-gray-600">{s.invoice_terms}</p>
         <div className="text-center">
           <p className="mb-8 font-semibold">For {s.company_name}</p>

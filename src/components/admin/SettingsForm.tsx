@@ -55,6 +55,7 @@ export function SettingsForm({ s }: { s: Record<string, string> }) {
             <F k="bank_branch" label="Branch" s={s} />
             <F k="bank_account" label="Account number" s={s} />
             <F k="bank_ifsc" label="IFSC" s={s} />
+            <F k="bank_upi" label="UPI ID (for Scan & Pay QR on bills)" s={s} hint="e.g. yourid@iob — a QR with the bill amount is printed on every invoice" />
           </div>
         </section>
         <section className="card p-5">
